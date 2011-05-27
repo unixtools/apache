@@ -1,0 +1,24 @@
+/local/apache/cgiwrap/configure \
+--with-local-contact-name="Nathan Neulinger" \
+--with-local-contact-url="mailto:nneul@neulinger.org" \
+--with-local-contact-phone="(573)612-1412" \
+--without-check-owner \
+--without-check-group \
+--without-host-checking \
+--with-block-svn-paths \
+--with-block-cvs-paths \
+--with-logging-syslog=cgiwrap \
+--without-check-group-writable \
+--without-check-symlink \
+--with-report-rusage \
+--without-nph \
+--with-cgiwrapd \
+--with-setenv-tz=UTC \
+--with-gcc-wall \
+--with-php=/usr/bin/php \
+--with-php-interpreter \
+--with-php-nonexec-only \
+--with-allow-deny-netgroups \
+--without-initgroups \
+--with-rlimit-cpu=60 \
+$*

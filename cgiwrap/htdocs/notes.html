@@ -1,0 +1,33 @@
+<TITLE>CGIWrap - Compilation Notes</TITLE>
+<script type="text/javascript"><!--
+google_ad_client = "pub-9701700286391362";
+/* CGIWrap Header */
+google_ad_slot = "5543629709";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<CENTER><H2>CGIWrap - Compilation Notes</H2></CENTER>
+<HR><P>
+
+<DL>
+
+<DT><H3>CDC 4680 EP/IX 2.1.1ad</H3>
+	<DD>CC=cc
+	<DD>CCOPT=-systype sysv -I/usr/include/bsd -lbsd
+	<P>
+	<DD>Don't include "strings.h"
+
+<DT><H3>HP-UX 9.0.x</H3>
+	<DD>Don't enable the setrlimit checking, it is not completely supported 
+by HPUX.
+
+<DT><H3>SCO Unixware 2.03</H3>
+	<DD>Problems with sete[ug]id. You might need to undefine these in 
+the config.sh file at the end of the Configure run. (Thanks to John 
+Romano <jromano@pb.net> for pointing this problem out.)
+
+</DL>

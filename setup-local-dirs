@@ -1,0 +1,215 @@
+#!/usr/bin/perl
+$| = 1;
+
+print "Scanning for local apache directories to update...\n";
+
+# Simplistic but sufficient for now
+my $osdir = "";
+my $uname = `uname -a`;
+if ( $uname =~ /\.(fc\d+)\./ )
+{
+	$osdir = $1;
+}
+else
+{
+	die "Unable to determine base config directory.\n";
+}
+if ( $uname =~ /x86_64/ )
+{
+	$osdir = "fc14-x86_64";
+}
+else
+{
+	$osdir = "fc14-i386";
+}
+
+opendir( DIR, "/local" );
+while ( $file = readdir(DIR) )
+{
+	if ( $file eq "apache-root" || $file =~ /apache-root-.*/ )
+	{
+		if ( !-e "/local/$file/conf/httpd.conf" )
+		{
+			print "$file must not be a server install, no httpd.conf\n";
+			next;
+		}
+
+		print "Found install at: /local/$file\n";
+
+		$user = undef;
+		open( IN, "/local/$file/conf/httpd.conf" );
+		while ( $line = <IN> )
+		{
+			if ( $line =~ /User\s+(.*?)\s*$/o )
+			{
+				$user = $1;
+			}
+		}
+		close(IN);
+
+		if ( $user eq "" )
+		{
+			die "Unable to determine user for /local/$file.\n";
+		}
+
+		print "Overwriting common config files in /local/$file/conf.\n";
+		system("cp -v /local/apache/conf-$osdir/* /local/$file/conf/");
+
+		print "Updating CA chain.crt file.\n";
+		system("mkdir -p /local/$file/ssl");
+		system("cp -v /local/apache/ssl/chain.crt /local/$file/ssl/");
+
+		print "Fixing perms for /local/$file for user $user.\n";
+		&fix_perms( "/local/$file", $user );
+
+		print "Updating scripts for /local/$file.\n";
+		&setup_scripts("/local/$file");
+
+		print "Removing any existing local-modules dir.\n";
+		&mysystem("rm -rf /local/$file/local-modules");
+	}
+}
+
+unlink("/home/local/adm/rc-start/rc.500.httpd");
+open(OUT, ">/home/local/adm/rc-start/rc.500.httpd");
+print OUT "#!/bin/sh\n";
+print OUT "/local/apache/stop-all\n";
+print OUT "/local/apache/start-all\n";
+close(OUT);
+system("chmod 755 /home/local/adm/rc-start/rc.500.httpd");
+
+unlink("/home/local/adm/rc-stop/rc.500.httpd");
+open(OUT, ">/home/local/adm/rc-stop/rc.500.httpd");
+print OUT "#!/bin/sh\n";
+print OUT "/local/apache/stop-all\n";
+close(OUT);
+system("chmod 755 /home/local/adm/rc-stop/rc.500.httpd");
+
+
+sub mysystem
+{
+	my ($cmd) = @_;
+	print "+ $cmd\n";
+	system($cmd);
+}
+
+sub fix_perms
+{
+	my ( $dir, $user ) = @_;
+
+	&mysystem("chown -R root:root $dir");
+	&mysystem("chown -R $user:$user $dir/logs");
+	&mysystem("chown -R $user:$user $dir/htdocs*");
+	&mysystem("chown root:root $dir/logs");
+	&mysystem("chown root:root $dir/logs/pidfile");
+	&mysystem("chmod -R go-rwx $dir");
+
+	my @pats = glob("$dir/*cgi*");
+	if ( $#pats >= 0 )
+	{
+		&mysystem("chmod -R go+rx $dir/*cgi*");
+	}
+
+	if ( -e "$dir/rpc" )
+	{
+		&mysystem("chown -R $user:$user $dir/rpc");
+	}
+
+	&mysystem("chmod go+x $dir");
+	&mysystem("chmod go+x $dir/logs");
+
+	foreach my $otherdir ( "sessions", "fastcgi" )
+	{
+		if ( -e "$dir/$otherdir" )
+		{
+			if ( $user eq "" )
+			{
+				die "Cannot set $otherdir permissions, no user specified.\n";
+			}
+			&mysystem("chown -R $user:$user $dir/$otherdir");
+		}
+	}
+}
+
+sub setup_scripts
+{
+	my ($dir) = @_;
+
+	#
+	# First start
+	#
+	unlink("$dir/start");
+	open( OUT, ">$dir/start" );
+	print OUT "#!/bin/sh\n";
+	print OUT "TZ=UTC\n";
+	print OUT "export TZ\n\n";
+
+
+	my $using_mod_perl = 0;
+	open(IN, "$dir/conf/httpd.conf");
+	while ( chomp($line = <IN>) )
+	{
+		if ( $line =~ /LoadModule.*mod_perl/o || $line =~ /modperl.conf/o )
+		{
+			$using_mod_perl = 1;
+		}
+	}
+	if ( $using_mod_perl )
+	{
+		print OUT "export LANG=C\n";
+		print OUT "export MALLOC_CHECK_=0\n";
+		print OUT "\n";
+	}
+
+	print OUT "cd $dir\n";
+	print OUT "echo Starting Apache in $dir\n";
+	print OUT "/usr/sbin/httpd -d $dir\n";
+	close(OUT);
+	&mysystem("chmod 700 $dir/start");
+
+	#
+	# And stop
+	#
+	unlink("$dir/stop");
+	open( OUT, ">$dir/stop" );
+	print OUT "#!/bin/sh\n";
+	print OUT "cd $dir\n";
+	print OUT "if [ -e logs/pidfile ]; then\n";
+	print OUT "echo Stopping Apache in $dir with pid \`cat logs/pidfile\`\n";
+	print OUT "touch $dir/logs/TMP\n";
+	print OUT "kill \`cat logs/pidfile\`\n";
+	print OUT "sleep 2\n";
+	print OUT "fi\n";
+	print OUT
+		"rm -f $dir/logs/TMP $dir/logs/httpd.mm.* $dir/logs/ssl_mutex* $dir/logs/ssl_scache*\n";
+	close(OUT);
+	&mysystem("chmod 700 $dir/stop");
+
+	#
+	# And restart
+	#
+	unlink("$dir/restart");
+	open( OUT, ">$dir/restart" );
+	print OUT "#!/bin/sh\n";
+	print OUT "cd $dir\n";
+	print OUT "./stop\n";
+	print OUT "sleep 1\n";
+	print OUT "./start\n";
+	close(OUT);
+	&mysystem("chmod 700 $dir/restart");
+
+	#
+	# And reload
+	#
+	unlink("$dir/reload");
+	open( OUT, ">$dir/reload" );
+	print OUT "#!/bin/sh\n";
+	print OUT "cd $dir\n";
+	print OUT "if [ -e logs/pidfile ]; then\n";
+	print OUT "echo Reloading Apache in $dir with pid \`cat logs/pidfile\`\n";
+	print OUT "kill -HUP \`cat logs/pidfile\`\n";
+	print OUT "fi\n";
+	close(OUT);
+	&mysystem("chmod 700 $dir/reload");
+
+}

@@ -1,0 +1,2 @@
+This apache setup assumes presence of /home/local/adm/rc-start|stop hierarchy, and uses
+the /local/apache-root, /local/apache-root-tag model for deployments. 
