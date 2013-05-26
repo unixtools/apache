@@ -48,10 +48,10 @@ while ( $file = readdir(DIR) ) {
         print "Updating CA chain.crt file.\n";
         system("mkdir -p /local/$file/ssl");
         if ( -e "/local/$file/ssl/httpd-chain.crt" ) {
-            system("cp -v /local/$file/ssl/httpd-chain.crt /local/$file/ssl/");
+            system("cp -v /local/$file/ssl/httpd-chain.crt /local/$file/ssl/chain.crt");
         }
         else {
-            system("cp -v /local/apache/ssl/chain.crt /local/$file/ssl/");
+            system("cp -v /local/apache/ssl/chain.crt /local/$file/ssl/chain.crt");
         }
 
         print "Fixing perms for /local/$file for user $user.\n";
