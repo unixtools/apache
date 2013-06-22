@@ -6,18 +6,15 @@ print "Scanning for local apache directories to update...\n";
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
-if ( $uname =~ /\.(fc\d+)\./ ) {
+if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
 }
 else {
-    die "Unable to determine base config directory.\n";
+	die;
 }
-if ( $uname =~ /x86_64/ ) {
-    $osdir = "fc14-x86_64";
-}
-else {
-    $osdir = "fc14-i386";
-}
+
+print "osdir = $osdir\n";
+exit;
 
 opendir( DIR, "/local" );
 while ( $file = readdir(DIR) ) {
