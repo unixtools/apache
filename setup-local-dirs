@@ -12,6 +12,7 @@ if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
 else {
 	die;
 }
+$osdir =~ s/\./-/go;
 
 print "Using OS Dir: $osdir\n";
 
