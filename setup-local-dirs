@@ -13,8 +13,7 @@ else {
 	die;
 }
 
-print "osdir = $osdir\n";
-exit;
+print "Using OS Dir: $osdir\n";
 
 opendir( DIR, "/local" );
 while ( $file = readdir(DIR) ) {
