@@ -6,8 +6,16 @@ print "Scanning for local apache directories to update...\n";
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
+my $frel = `cat /etc/fedora-release 2>&1`;
+my $arch = `uname -i`;
+chomp($arch);
+
 if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
+}
+elsif ( $frel =~ /Fedora release (\d+)/o )
+{
+    $osdir = "fc17." . $arch;
 }
 else {
 	die;
