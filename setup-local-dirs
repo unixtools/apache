@@ -111,6 +111,11 @@ sub fix_perms {
         &mysystem("chown -R $user:$user $dir/rpc");
     }
 
+    my @pats = glob("$dir/*cgi*/*cgiwrap*");
+    if ( $#pats >= 0 ) {
+        &mysystem("chmod 4755 $dir/*cgi*/*cgiwrap*");
+    }
+
     &mysystem("chmod go+x $dir");
     &mysystem("chmod go+x $dir/logs");
 
