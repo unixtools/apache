@@ -6,23 +6,38 @@ print "Scanning for local apache directories to update...\n";
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
-my $frel = `cat /etc/fedora-release 2>&1`;
-my $arch = `uname -i`;
+my $frel  = `cat /etc/fedora-release 2>&1`;
+my $arch  = `uname -i`;
 chomp($arch);
 
 if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
 }
-elsif ( $frel =~ /Fedora release (\d+)/o )
-{
+elsif ( $frel =~ /Fedora release (\d+)/o ) {
     $osdir = "fc17." . $arch;
 }
 else {
-	die;
+    die;
 }
 $osdir =~ s/\./-/go;
 
 print "Using OS Dir: $osdir\n";
+my %ca_map  = ();
+my $ca_base = "/local/apache/ca-certs";
+opendir( my $dir, $ca_base );
+while ( my $file = readdir($dir) ) {
+    next if ( $file eq "." || $file eq ".." );
+
+    open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
+    while ( defined( my $line = <$in> ) ) {
+        if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
+            print "Loaded CA ($1) = ${ca_base}/${file}\n";
+            $ca_map{$1} = "${ca_base}/${file}";
+        }
+    }
+    close($in);
+}
+closedir($dir);
 
 opendir( DIR, "/local" );
 while ( $file = readdir(DIR) ) {
@@ -52,12 +67,40 @@ while ( $file = readdir(DIR) ) {
 
         print "Updating CA chain.crt file.\n";
         system("mkdir -p /local/$file/ssl");
-        if ( -e "/local/$file/ssl/httpd-chain.crt" ) {
-            system("cp -v /local/$file/ssl/httpd-chain.crt /local/$file/ssl/chain.crt");
+
+        print "Determining chain crt to populate based on httpd.crt:\n";
+        my @certs_to_add = ();
+        if ( -e "/local/$file/ssl/httpd.crt" ) {
+            if ( -e "/local/$file/ssl/httpd-chain.crt" ) {
+                push( @certs_to_add, "/local/$file/ssl/httpd-chain.crt" );
+            }
+
+            open( my $in, "-|" ) || exec(
+                "openssl", "x509",
+                "-in" => "/local/$file/ssl/httpd.crt",
+                "-issuer", "-noout"
+            );
+            while ( defined( my $line = <$in> ) ) {
+                if ( $line =~ /issuer=\s*(.*?)\s*$/o ) {
+                    if ( $ca_map{$1} ) {
+                        push( @certs_to_add, $ca_map{$1} );
+                    }
+                }
+            }
+            close($in);
         }
-        else {
-            system("cp -v /local/apache/ssl/chain.crt /local/$file/ssl/chain.crt");
+
+        open( my $out, ">/local/$file/ssl/chain.crt" );
+        foreach my $file (@certs_to_add) {
+            print "  Merging $file...\n";
+            open( my $in, "<$file" );
+            while ( defined( my $line = <$in> ) ) {
+                print $out $line;
+            }
+            close($in);
+            print $out "\n";
         }
+        close($out);
 
         print "Fixing perms for /local/$file for user $user.\n";
         &fix_perms( "/local/$file", $user );
@@ -141,9 +184,9 @@ sub setup_scripts {
     print OUT "TZ=UTC\n";
     print OUT "export TZ\n\n";
 
-	print OUT "if [ -e $dir/env.sh ]; then\n";
-	print OUT ". $dir/env.sh\n";
-	print OUT "fi\n\n";
+    print OUT "if [ -e $dir/env.sh ]; then\n";
+    print OUT ". $dir/env.sh\n";
+    print OUT "fi\n\n";
 
     my $using_mod_perl = 0;
     open( IN, "$dir/conf/httpd.conf" );
@@ -207,5 +250,4 @@ sub setup_scripts {
     print OUT "fi\n";
     close(OUT);
     &mysystem("chmod 700 $dir/reload");
-
 }
