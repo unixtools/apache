@@ -150,19 +150,16 @@ sub fix_perms {
         &mysystem("chmod -R go+rx $dir/*cgi*");
     }
 
-    if ( -e "$dir/rpc" ) {
-        &mysystem("chown -R $user:$user $dir/rpc");
-    }
-
     my @pats = glob("$dir/*cgi*/*cgiwrap*");
     if ( $#pats >= 0 ) {
+        &mysystem("chown root:root $dir/*cgi*/*cgiwrap*");
         &mysystem("chmod 4755 $dir/*cgi*/*cgiwrap*");
     }
 
     &mysystem("chmod go+x $dir");
     &mysystem("chmod go+x $dir/logs");
 
-    foreach my $otherdir ( "sessions", "fastcgi" ) {
+    foreach my $otherdir ( "sessions", "fastcgi", "dav" ) {
         if ( -e "$dir/$otherdir" ) {
             if ( $user eq "" ) {
                 die "Cannot set $otherdir permissions, no user specified.\n";
