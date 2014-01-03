@@ -141,6 +141,10 @@ sub setup_scripts {
     print OUT "TZ=UTC\n";
     print OUT "export TZ\n\n";
 
+	print OUT "if [ -e $dir/env.sh ]; then\n";
+	print OUT ". $dir/env.sh\n";
+	print OUT "fi\n\n";
+
     my $using_mod_perl = 0;
     open( IN, "$dir/conf/httpd.conf" );
     while ( chomp( $line = <IN> ) ) {
