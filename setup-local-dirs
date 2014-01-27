@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 $| = 1;
 
-print "Scanning for local apache directories to update...\n";
-
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
@@ -21,7 +19,15 @@ else {
 }
 $osdir =~ s/\./-/go;
 
+if ( ! -e "/local/apache/conf-$osdir" )
+{
+    print "No OS config dir for ($osdir).\n";
+    exit;
+}
+
 print "Using OS Dir: $osdir\n";
+print "Scanning for local apache directories to update...\n";
+
 my %ca_map  = ();
 my $ca_base = "/local/apache/ca-certs";
 opendir( my $dir, $ca_base );
