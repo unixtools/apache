@@ -33,8 +33,9 @@ while ( my $file = readdir($dir) ) {
     open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
     while ( defined( my $line = <$in> ) ) {
         if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
-            print "Loaded CA ($1)\n";
-            print "  from ${ca_base}/${file}\n";
+            my $pname = $1;
+            $pname =~ s|.*/|.../|go;
+            print "Loaded CA ($pname) from ${ca_base}/${file}\n";
             $ca_map{$1} = "${ca_base}/${file}";
         }
     }
