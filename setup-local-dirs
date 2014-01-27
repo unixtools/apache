@@ -1,26 +1,22 @@
 #!/usr/bin/perl
 $| = 1;
 
+# Try a uname based approach first
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
-my $frel  = `cat /etc/fedora-release 2>&1`;
-my $arch  = `uname -i`;
-chomp($arch);
 
 if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
-}
-elsif ( $frel =~ /Fedora release (\d+)/o ) {
-    $osdir = "fc17." . $arch;
 }
 else {
     die;
 }
 $osdir =~ s/\./-/go;
 
-if ( ! -e "/local/apache/conf-$osdir" )
-{
+print "Be sure to 'git pull' to update to latest code.\n";
+
+if ( !-e "/local/apache/conf-$osdir" ) {
     print "No OS config dir for ($osdir).\n";
     exit;
 }
@@ -37,7 +33,8 @@ while ( my $file = readdir($dir) ) {
     open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
     while ( defined( my $line = <$in> ) ) {
         if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
-            print "Loaded CA ($1) = ${ca_base}/${file}\n";
+            print "Loaded CA ($1)\n";
+            print "  from ${ca_base}/${file}\n";
             $ca_map{$1} = "${ca_base}/${file}";
         }
     }
