@@ -94,6 +94,11 @@ while ( $file = readdir(DIR) ) {
             close($in);
         }
 
+        # Insure it's not empty, otherwise error on startup
+        if ( scalar(@certs_to_add) == 0 && -e "/local/$file/ssl/httpd.crt" ) {
+            push( @certs_to_add, "/local/$file/ssl/httpd.crt" );
+        }
+
         open( my $out, ">/local/$file/ssl/chain.crt" );
         foreach my $file (@certs_to_add) {
             print "  Merging $file...\n";
