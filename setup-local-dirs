@@ -33,10 +33,11 @@ while ( my $file = readdir($dir) ) {
     open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
     while ( defined( my $line = <$in> ) ) {
         if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
+			my $subject = $1;
             my $pname = $1;
             $pname =~ s|.*/|.../|go;
             print "Loaded CA ($pname) from ${ca_base}/${file}\n";
-            $ca_map{$1} = "${ca_base}/${file}";
+            $ca_map{$subject} = "${ca_base}/${file}";
         }
     }
     close($in);
@@ -86,6 +87,7 @@ while ( $file = readdir(DIR) ) {
             );
             while ( defined( my $line = <$in> ) ) {
                 if ( $line =~ /issuer=\s*(.*?)\s*$/o ) {
+					print "Found cert issuer: $1\n";
                     if ( $ca_map{$1} ) {
                         push( @certs_to_add, $ca_map{$1} );
                     }
