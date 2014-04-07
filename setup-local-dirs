@@ -118,6 +118,20 @@ while ( $file = readdir(DIR) ) {
         }
         close($out);
 
+        open( my $out, ">/local/$file/ssl/httpd-with-chain.crt" );
+        open( my $in,  "/local/$file/ssl/httpd.crt" );
+        while ( defined( my $line = <$in> ) ) {
+            print $out $line;
+        }
+        close($in);
+        print $out "\n";
+        open( my $in, "/local/$file/ssl/chain.crt" );
+        while ( defined( my $line = <$in> ) ) {
+            print $out $line;
+        }
+        close($in);
+        close($out);
+
         print "Fixing perms for /local/$file for user $user.\n";
         &fix_perms( "/local/$file", $user );
 
