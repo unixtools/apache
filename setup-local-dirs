@@ -5,19 +5,29 @@ $| = 1;
 # Simplistic but sufficient for now
 my $osdir = "";
 my $uname = `uname -a`;
-my $frel = `cat /etc/fedora-release`;
+my $osrel = "";
 
-if ( $uname =~ /\.((fc|el)\d+\.(x86_64|i\d+))/ ) {
+if ( -e "/etc/fedora-release" ) {
+$osrel = `cat /etc/fedora-release`;
+}
+
+if ( $uname =~ /\.((fc|el|amzn)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
 }
-elsif ( $uname =~ /x86_64/ && $frel =~ /Fedora.*?(\d+)/ )
+elsif ( $uname =~ /x86_64/ && $osrel =~ /Fedora.*?(\d+)/ )
 {
 	$osdir = "fc${1}.x86_64";
 }
 else {
     die;
 }
+
 $osdir =~ s/\./-/go;
+
+if ( ! $osdir )
+{
+	print "Couldn't determine os directory.\n";
+}
 
 print "Be sure to 'git pull' to update to latest code.\n";
 
