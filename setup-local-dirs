@@ -178,10 +178,11 @@ sub fix_perms {
     my ( $dir, $user ) = @_;
 
     &mysystem("chown -R root:root $dir");
+    &mysystem("chown root:$user $dir");
     &mysystem("chown -R $user:$user $dir/logs");
     &mysystem("chown -R $user:$user $dir/htdocs*");
     &mysystem("mkdir -p $dir/logs");
-    &mysystem("chown root:root $dir/logs");
+    &mysystem("chown root:$user $dir/logs");
     &mysystem("chown root:root $dir/logs/pidfile");
     &mysystem("chmod -R go-rwx $dir");
 
@@ -197,7 +198,9 @@ sub fix_perms {
     }
 
     &mysystem("chmod go+x $dir");
+    &mysystem("chmod g+rx $dir");
     &mysystem("chmod go+x $dir/logs");
+    &mysystem("chmod g+rx $dir/logs");
 
     foreach my $otherdir ( "sessions", "fastcgi", "dav" ) {
         if ( -e "$dir/$otherdir" ) {
