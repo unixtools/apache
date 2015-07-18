@@ -8,7 +8,11 @@ my $uname = `uname -a`;
 my $osrel = "";
 
 if ( -e "/etc/fedora-release" ) {
-$osrel = `cat /etc/fedora-release`;
+    $osrel = `cat /etc/fedora-release`;
+} 
+elsif ( -e "/etc/os-release" )
+{
+    $osrel = `cat /etc/os-release`;
 }
 
 if ( $uname =~ /\.((fc|el|amzn)\d+\.(x86_64|i\d+))/ ) {
@@ -17,6 +21,10 @@ if ( $uname =~ /\.((fc|el|amzn)\d+\.(x86_64|i\d+))/ ) {
 elsif ( $uname =~ /x86_64/ && $osrel =~ /Fedora.*?(\d+)/ )
 {
 	$osdir = "fc${1}.x86_64";
+}
+elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 14.04/ )
+{
+	$osdir = "ub1404.x86_64";
 }
 else {
     die;
@@ -243,7 +251,18 @@ sub setup_scripts {
 
     print OUT "cd $dir\n";
     print OUT "echo Starting Apache in $dir\n";
+    if ( -e "/usr/sbin/httpd" )
+	{
     print OUT "/usr/sbin/httpd -d $dir\n";
+	}
+elsif ( -e "/usr/sbin/apache2" )
+{
+    print OUT "/usr/sbin/apache2 -d $dir -f conf/httpd.conf\n";
+}
+else
+{
+	die "Cannot determine apache executable.\n";
+}
     close(OUT);
     &mysystem("chmod 700 $dir/start");
 
