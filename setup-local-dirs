@@ -9,22 +9,19 @@ my $osrel = "";
 
 if ( -e "/etc/fedora-release" ) {
     $osrel = `cat /etc/fedora-release`;
-} 
-elsif ( -e "/etc/os-release" )
-{
+}
+elsif ( -e "/etc/os-release" ) {
     $osrel = `cat /etc/os-release`;
 }
 
 if ( $uname =~ /\.((fc|el|amzn)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
 }
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Fedora.*?(\d+)/ )
-{
-	$osdir = "fc${1}.x86_64";
+elsif ( $uname =~ /x86_64/ && $osrel =~ /Fedora.*?(\d+)/ ) {
+    $osdir = "fc${1}.x86_64";
 }
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 14.04/ )
-{
-	$osdir = "ub1404.x86_64";
+elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 14.04/ ) {
+    $osdir = "ub1404.x86_64";
 }
 else {
     die;
@@ -32,9 +29,8 @@ else {
 
 $osdir =~ s/\./-/go;
 
-if ( ! $osdir )
-{
-	print "Couldn't determine os directory.\n";
+if ( !$osdir ) {
+    print "Couldn't determine os directory.\n";
 }
 
 print "Be sure to 'git pull' to update to latest code.\n";
@@ -56,8 +52,8 @@ while ( my $file = readdir($dir) ) {
     open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
     while ( defined( my $line = <$in> ) ) {
         if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
-			my $subject = $1;
-            my $pname = $1;
+            my $subject = $1;
+            my $pname   = $1;
             $pname =~ s|.*/|.../|go;
             print "Loaded CA ($pname) from ${ca_base}/${file}\n";
             $ca_map{$subject} = "${ca_base}/${file}";
@@ -110,7 +106,7 @@ while ( $file = readdir(DIR) ) {
             );
             while ( defined( my $line = <$in> ) ) {
                 if ( $line =~ /issuer=\s*(.*?)\s*$/o ) {
-					print "Found cert issuer: $1\n";
+                    print "Found cert issuer: $1\n";
                     if ( $ca_map{$1} ) {
                         push( @certs_to_add, $ca_map{$1} );
                     }
@@ -251,18 +247,15 @@ sub setup_scripts {
 
     print OUT "cd $dir\n";
     print OUT "echo Starting Apache in $dir\n";
-    if ( -e "/usr/sbin/httpd" )
-	{
-    print OUT "/usr/sbin/httpd -d $dir\n";
-	}
-elsif ( -e "/usr/sbin/apache2" )
-{
-    print OUT "/usr/sbin/apache2 -d $dir -f conf/httpd.conf\n";
-}
-else
-{
-	die "Cannot determine apache executable.\n";
-}
+    if ( -e "/usr/sbin/httpd" ) {
+        print OUT "/usr/sbin/httpd -d $dir\n";
+    }
+    elsif ( -e "/usr/sbin/apache2" ) {
+        print OUT "/usr/sbin/apache2 -d $dir -f conf/httpd.conf\n";
+    }
+    else {
+        die "Cannot determine apache executable.\n";
+    }
     close(OUT);
     &mysystem("chmod 700 $dir/start");
 
