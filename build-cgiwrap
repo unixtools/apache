@@ -3,10 +3,10 @@ for f in conf.*cgi*; do
         echo $f
 	mkdir -p objdir.$f
 	cd objdir.$f
-	gmake distclean
+	make distclean
         ../$f
-	gmake -j
-        gmake install
+	make -j
+        make install
 	cd ..
 done
 
