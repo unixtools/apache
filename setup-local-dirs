@@ -88,13 +88,13 @@ while ( $file = readdir(DIR) ) {
         print "Found install at: /local/$file\n";
 
         $user = undef;
-        open( IN, "/local/$file/conf/httpd.conf" );
-        while ( $line = <IN> ) {
+        open( my $in, "/local/$file/conf/httpd.conf" );
+        while ( $line = <$in> ) {
             if ( $line =~ /User\s+(.*?)\s*$/o ) {
                 $user = $1;
             }
         }
-        close(IN);
+        close($in);
 
         if ( $user eq "" ) {
             die "Unable to determine user for /local/$file.\n";
