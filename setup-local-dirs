@@ -24,7 +24,7 @@ elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 14.04/ ) {
     $osdir = "ub1404.x86_64";
 }
 elsif ( $osrel =~ /Raspbian.*7/ ) {
-	$osdir = "raspbian7";
+    $osdir = "raspbian7";
 }
 else {
     die;
@@ -91,6 +91,10 @@ while ( $file = readdir(DIR) ) {
 
         print "Overwriting common config files in /local/$file/conf.\n";
         system("cp -v /local/apache/conf-$osdir/* /local/$file/conf/");
+
+        print "Cleaning known OLD files in /local/$file/conf.\n";
+        unlink("/local/$file/conf/modjk.conf");
+        unlink("/local/$file/conf/modfastcgi.conf");
 
         print "Updating CA chain.crt file.\n";
         system("mkdir -p /local/$file/ssl");
