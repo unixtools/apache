@@ -90,7 +90,7 @@ while ( $file = readdir(DIR) ) {
         $user = undef;
         open( my $in, "/local/$file/conf/httpd.conf" );
         while ( $line = <$in> ) {
-            if ( $line =~ /User\s+(.*?)\s*$/o ) {
+            if ( $line =~ /^\s*User\s+(.*?)\s*$/o ) {
                 $user = $1;
             }
         }
