@@ -209,6 +209,8 @@ sub fix_perms {
     &mysystem("mkdir -p $dir/logs");
     &mysystem("chown root:$user $dir/logs");
     &mysystem("chown root:root $dir/logs/pidfile");
+    &mysystem("mkdir -p $dir/locks");
+    &mysystem("chown $user:$user $dir/locks");
     &mysystem("chmod -R go-rwx $dir");
 
     my @pats = glob("$dir/*cgi*");
@@ -252,6 +254,8 @@ sub setup_scripts {
     print OUT "if [ -e $dir/env.sh ]; then\n";
     print OUT ". $dir/env.sh\n";
     print OUT "fi\n\n";
+
+    print OUT "ulimit -HSn 16000\n";
 
     print OUT "cd $dir\n";
     print OUT "echo Starting Apache in $dir\n";
