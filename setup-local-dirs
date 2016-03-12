@@ -209,8 +209,9 @@ sub fix_perms {
     &mysystem("mkdir -p $dir/logs");
     &mysystem("chown root:$user $dir/logs");
     &mysystem("chown root:root $dir/logs/pidfile");
-    &mysystem("mkdir -p $dir/locks");
-    &mysystem("chown $user:$user $dir/locks");
+    &mysystem("rm -rf $dir/locks");
+    &mysystem("mkdir -p $dir/tmp");
+    &mysystem("chown $user:$user $dir/tmp");
     &mysystem("chmod -R go-rwx $dir");
 
     my @pats = glob("$dir/*cgi*");
