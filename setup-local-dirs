@@ -180,7 +180,7 @@ while ( $file = readdir(DIR) ) {
 
 unlink("/home/local/adm/rc-start/rc.500.httpd");
 open( OUT, ">/home/local/adm/rc-start/rc.500.httpd" );
-print OUT "#!/bin/sh\n";
+print OUT "#!/bin/bash\n";
 print OUT "/local/apache/stop-all\n";
 print OUT "/local/apache/start-all\n";
 close(OUT);
@@ -188,7 +188,7 @@ system("chmod 755 /home/local/adm/rc-start/rc.500.httpd");
 
 unlink("/home/local/adm/rc-stop/rc.500.httpd");
 open( OUT, ">/home/local/adm/rc-stop/rc.500.httpd" );
-print OUT "#!/bin/sh\n";
+print OUT "#!/bin/bash\n";
 print OUT "/local/apache/stop-all\n";
 close(OUT);
 system("chmod 755 /home/local/adm/rc-stop/rc.500.httpd");
@@ -247,7 +247,7 @@ sub setup_scripts {
     #
     unlink("$dir/start");
     open( OUT, ">$dir/start" );
-    print OUT "#!/bin/sh\n";
+    print OUT "#!/bin/bash\n";
     print OUT "TZ=UTC\n";
     print OUT "export TZ\n\n";
 
@@ -276,7 +276,7 @@ sub setup_scripts {
     #
     unlink("$dir/stop");
     open( OUT, ">$dir/stop" );
-    print OUT "#!/bin/sh\n";
+    print OUT "#!/bin/bash\n";
     print OUT "cd $dir\n";
     print OUT "if [ -e logs/pidfile ]; then\n";
     print OUT "echo Stopping Apache in $dir with pid \`cat logs/pidfile\`\n";
@@ -293,7 +293,7 @@ sub setup_scripts {
     #
     unlink("$dir/restart");
     open( OUT, ">$dir/restart" );
-    print OUT "#!/bin/sh\n";
+    print OUT "#!/bin/bash\n";
     print OUT "cd $dir\n";
     print OUT "./stop\n";
     print OUT "sleep 1\n";
@@ -306,7 +306,7 @@ sub setup_scripts {
     #
     unlink("$dir/reload");
     open( OUT, ">$dir/reload" );
-    print OUT "#!/bin/sh\n";
+    print OUT "#!/bin/bash\n";
     print OUT "cd $dir\n";
     print OUT "if [ -e logs/pidfile ]; then\n";
     print OUT "echo Reloading Apache in $dir with pid \`cat logs/pidfile\`\n";
