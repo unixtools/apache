@@ -44,9 +44,8 @@ else {
     die;
 }
 
-if ( $is_deb && ! -e "/usr/sbin/apache2" )
-{
-	system("apt-get", "-y", "install", "apache2-bin");
+if ( $is_deb && !-e "/usr/sbin/apache2" ) {
+    system( "apt-get", "-y", "install", "apache2-bin" );
 }
 
 $osdir =~ s/\./-/go;
