@@ -7,6 +7,17 @@ my $osdir = "";
 my $uname = `uname -a`;
 my $osrel = "";
 
+# Determine env type
+my $is_rpm = 0;
+my $is_deb = 0;
+if ( ( -e "/bin/rpm" || -e "/usr/bin/rpm" ) && ( !-e "/usr/bin/apt-get" ) ) {
+    $is_rpm = 1;
+}
+elsif ( -e "/usr/bin/apt-get" ) {
+    $ENV{DEBIAN_FRONTEND} = "noninteractive";
+    $is_deb = 1;
+}
+
 if ( -e "/etc/fedora-release" ) {
     $osrel = `cat /etc/fedora-release`;
 }
@@ -31,6 +42,11 @@ elsif ( $osrel =~ /Raspbian.*7/ ) {
 }
 else {
     die;
+}
+
+if ( $is_deb && ! -e "/usr/sbin/apache2" )
+{
+	system("apt-get", "-y", "install", "apache2-bin");
 }
 
 $osdir =~ s/\./-/go;
