@@ -1,0 +1,7 @@
+/local/apache/common-cgiwrap-conf \
+--with-allow-file="/local/apache-root/cgiwrap.allow" \
+--with-deny-file="/local/apache-root/cgiwrap.deny" \
+--with-logging-syslog=webuser \
+--with-httpd-user=webuser \
+$*
+
