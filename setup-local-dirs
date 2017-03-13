@@ -48,6 +48,10 @@ if ( $is_deb && !-e "/usr/sbin/apache2" ) {
     system( "apt-get", "-y", "install", "apache2-bin" );
 }
 
+if ( $is_deb && !-e "/usr/share/apache2/icons/folder.png" ) {
+    system( "apt-get", "-y", "install", "apache2-data" );
+}
+
 $osdir =~ s/\./-/go;
 
 if ( !$osdir ) {
