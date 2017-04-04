@@ -52,6 +52,10 @@ if ( $is_deb && !-e "/usr/share/apache2/icons/folder.png" ) {
     system( "apt-get", "-y", "install", "apache2-data" );
 }
 
+if ( $is_deb && !-e "/usr/bin/htpasswd" ) {
+    system( "apt-get", "-y", "install", "apache2-utils" );
+}
+
 $osdir =~ s/\./-/go;
 
 if ( !$osdir ) {
