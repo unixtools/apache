@@ -253,7 +253,7 @@ sub fix_perms {
     &mysystem("chmod go+x $dir/logs");
     &mysystem("chmod g+rx $dir/logs");
 
-    foreach my $otherdir ( "sessions", "fastcgi", "dav" ) {
+    foreach my $otherdir ( "sessions", "fastcgi", "dav", "mellon" ) {
         if ( -e "$dir/$otherdir" ) {
             if ( $user eq "" ) {
                 die "Cannot set $otherdir permissions, no user specified.\n";
