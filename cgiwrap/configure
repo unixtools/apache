@@ -681,6 +681,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -758,6 +759,7 @@ with_redirect_stderr
 with_initgroups
 with_setgroups
 with_rewrite
+with_auto_setenv_home
 with_setenv_ld_library_path
 with_setenv_path
 with_setenv_tz
@@ -829,6 +831,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1081,6 +1084,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1218,7 +1230,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1371,6 +1383,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1513,9 +1526,11 @@ Optional Packages:
   --without-initgroups
 	  disable use of initgroups() to clear non-userid auxilliary groups
   --without-setgroups
-	  disable use of setgroups() to add userid's auxilliary groups
+	  disable use of setgroups() to add user auxilliary groups
   --with-rewrite=FILE
 	  use a file to rewrite user directories
+  --with-auto-setenv-home
+	  set HOME environment variable automatically
   --with-setenv-ld_library_path=STRING
           set LD_LIBRARY_PATH environment variable to STRING
   --with-setenv-path=STRING
@@ -2495,7 +2510,7 @@ test -n "$target_alias" &&
 ac_config_headers="$ac_config_headers config.h"
 
 
-VERSION="4.2"
+VERSION="4.3"
 
 
 ac_ext=c
@@ -5204,7 +5219,6 @@ $as_echo "enabled, aux groups will be set" >&6; }
 fi
 
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for user directory rewrite" >&5
 $as_echo_n "checking for user directory rewrite... " >&6; }
 
@@ -5228,6 +5242,31 @@ else
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled, no rewrite file will be used" >&5
 $as_echo "disabled, no rewrite file will be used" >&6; }
+
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for whether to set HOME env var automatically" >&5
+$as_echo_n "checking for whether to set HOME env var automatically... " >&6; }
+
+# Check whether --with-auto-setenv-home was given.
+if test "${with_auto_setenv_home+set}" = set; then :
+  withval=$with_auto_setenv_home;
+		if test "x$withval" != xno; then
+
+$as_echo "#define CONF_AUTO_SETENV_HOME /**/" >>confdefs.h
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: enabled, HOME will be set automatically" >&5
+$as_echo "enabled, HOME will be set automatically" >&6; }
+		else
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled, HOME will not be set automatically" >&5
+$as_echo "disabled, HOME will not be set automatically" >&6; }
+		fi
+
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled, HOME will not be set automatically" >&5
+$as_echo "disabled, HOME will not be set automatically" >&6; }
 
 fi
 

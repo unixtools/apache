@@ -17,7 +17,7 @@
  *
  */
 
-/* rcsid: $Id: cgiwrap.h 306 2008-06-13 14:02:02Z nneul $ */
+/* rcsid: $Id$ */
 
 /*
  * Quiet warning about rcsid
