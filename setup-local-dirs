@@ -40,6 +40,9 @@ elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 16.04/ ) {
 elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 18.04/ ) {
     $osdir = "ub1804.x86_64";
 }
+elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 20/ ) {
+    $osdir = "ub20.x86_64";
+}
 elsif ( $osrel =~ /Raspbian.*7/ ) {
     $osdir = "raspbian7";
 }
