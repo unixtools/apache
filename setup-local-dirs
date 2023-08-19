@@ -46,6 +46,9 @@ elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 20/ ) {
 elsif ( $osrel =~ /Raspbian.*7/ ) {
     $osdir = "raspbian7";
 }
+elsif ( $uname =~ /x86_64/ && $osrel =~ /bookworm/ ) {
+    $osdir = "deb12.x86_64";
+}
 else {
     die;
 }
