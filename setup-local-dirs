@@ -176,6 +176,7 @@ while ( $file = readdir(DIR) ) {
             push( @certs_to_add, "/local/$file/ssl/httpd.crt" );
         }
 
+        my $merge_count = 0;
         open( my $out, ">/local/$file/ssl/chain.crt" );
         foreach my $file (@certs_to_add) {
             print "  Merging $file...\n";
@@ -185,8 +186,18 @@ while ( $file = readdir(DIR) ) {
             }
             close($in);
             print $out "\n";
+            if ( $file =~ m|apache/ca-certs|io ) {
+                $merge_count++;
+            }
         }
         close($out);
+
+        if ( $merge_count < 1 ) {
+            print "  ###\n";
+            print
+                "  ### WARNING: Only one chain file found to merge, check for missing chain in /local/apache/ca-certs\n";
+            print "  ###\n";
+        }
 
         open( my $out, ">/local/$file/ssl/httpd-with-chain.crt" );
         open( my $in,  "/local/$file/ssl/httpd.crt" );
