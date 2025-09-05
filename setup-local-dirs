@@ -28,18 +28,6 @@ elsif ( -e "/etc/os-release" ) {
 if ( $uname =~ /\.((fc|el|amzn)\d+\.(x86_64|i\d+))/ ) {
     $osdir = $1;
 }
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Fedora.*?(\d+)/ ) {
-    $osdir = "fc${1}.x86_64";
-}
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 14.04/ ) {
-    $osdir = "ub1404.x86_64";
-}
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 16.04/ ) {
-    $osdir = "ub1604.x86_64";
-}
-elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 18.04/ ) {
-    $osdir = "ub1804.x86_64";
-}
 elsif ( $uname =~ /x86_64/ && $osrel =~ /Ubuntu 20/ ) {
     $osdir = "ub20.x86_64";
 }
@@ -195,7 +183,7 @@ while ( $file = readdir(DIR) ) {
                 );
                 while ( defined( my $line = <$in> ) ) {
                     if ( $line =~ /CA Issuers - URI:(http.*?)\s+/ ) {
-						$aia_issuer = $1;
+                        $aia_issuer = $1;
                         print "Found AIA Issuer: $1\n";
                     }
                 }
@@ -204,7 +192,7 @@ while ( $file = readdir(DIR) ) {
         }
 
         if ( scalar(@certs_to_add) == 0 && $aia_issuer ) {
-			print "Retrieving AIA issuer certificate...\n";
+            print "Retrieving AIA issuer certificate...\n";
             my $tmp_cert = "/tmp/tmpcert-$$-" . time;
             if ( -e "/usr/bin/wget" ) {
                 system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
