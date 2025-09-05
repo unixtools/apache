@@ -153,25 +153,70 @@ while ( $file = readdir(DIR) ) {
 
         print "Determining chain crt to populate based on httpd.crt:\n";
         my @certs_to_add = ();
+        my $aia_issuer;
+
         if ( -e "/local/$file/ssl/httpd.crt" ) {
             if ( -e "/local/$file/ssl/httpd-chain.crt" ) {
                 push( @certs_to_add, "/local/$file/ssl/httpd-chain.crt" );
             }
 
+            my $self_signed = 0;
+            my $issuer;
+            my $subject;
             open( my $in, "-|" ) || exec(
                 "openssl", "x509",
                 "-in" => "/local/$file/ssl/httpd.crt",
-                "-issuer", "-noout"
+                "-issuer", "-subject", "-noout"
             );
             while ( defined( my $line = <$in> ) ) {
                 if ( $line =~ /issuer=\s*(.*?)\s*$/o ) {
+                    $issuer = $1;
                     print "Found cert issuer: $1\n";
                     if ( $ca_map{$1} ) {
                         push( @certs_to_add, $ca_map{$1} );
                     }
                 }
+                if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
+                    $subject = $1;
+                    print "Found cert subject: $1\n";
+                }
             }
             close($in);
+
+            if ( $issuer && $issuer eq $subject ) {
+                print "Certificate is self signed.\n";
+            }
+            elsif ( scalar(@certs_to_add) == 0 ) {
+                print "No issuer CA matched, looking up Authority Information Access.\n";
+                open( my $in, "-|" ) || exec(
+                    "openssl", "x509",
+                    "-in" => "/local/$file/ssl/httpd.crt",
+                    "-text"
+                );
+                while ( defined( my $line = <$in> ) ) {
+                    if ( $line =~ /CA Issuers - URI:(http.*?)\s+/ ) {
+						$aia_issuer = $1;
+                        print "Found AIA Issuer: $1\n";
+                    }
+                }
+                close($in);
+            }
+        }
+
+        if ( scalar(@certs_to_add) == 0 && $aia_issuer ) {
+			print "Retrieving AIA issuer certificate...\n";
+            my $tmp_cert = "/tmp/tmpcert-$$-" . time;
+            if ( -e "/usr/bin/wget" ) {
+                system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
+            }
+            elsif ( -e "/usr/bin/curl" ) {
+                system( "/usr/bin/curl", "-q", "--output", $tmp_cert, $aia_issuer );
+            }
+            else {
+                die "Cannot retrieve upstream AIA issuer cert.";
+            }
+            system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", "/local/$file/ssl/issuer.crt" );
+            push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
         }
 
         # Insure it's not empty, otherwise error on startup
@@ -189,7 +234,7 @@ while ( $file = readdir(DIR) ) {
             }
             close($in);
             print $out "\n";
-            if ( $file =~ m|apache/ca-certs|io ) {
+            if ( $file =~ m|apache/ca-certs|io || $file =~ /issuer.crt/ ) {
                 $merge_count++;
             }
         }
