@@ -92,26 +92,6 @@ if ( !-e "/local/apache/conf-$osdir" ) {
 print "Using OS Dir: $osdir\n";
 print "Scanning for local apache directories to update...\n";
 
-my %ca_map  = ();
-my $ca_base = "/local/apache/ca-certs";
-opendir( my $dir, $ca_base );
-while ( my $file = readdir($dir) ) {
-    next if ( $file eq "." || $file eq ".." );
-
-    open( my $in, "-|" ) || exec( "openssl", "x509", "-in" => "$ca_base/$file", "-subject", "-noout" );
-    while ( defined( my $line = <$in> ) ) {
-        if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
-            my $subject = $1;
-            my $pname   = $1;
-            $pname =~ s|.*/|.../|go;
-            print "Loaded CA ($pname) from ${ca_base}/${file}\n";
-            $ca_map{$subject} = "${ca_base}/${file}";
-        }
-    }
-    close($in);
-}
-closedir($dir);
-
 opendir( DIR, "/local" );
 while ( $file = readdir(DIR) ) {
     if ( $file eq "apache-root" || $file =~ /apache-root-.*/ ) {
@@ -153,70 +133,17 @@ while ( $file = readdir(DIR) ) {
             if ( -e "/local/$file/ssl/httpd-chain.crt" ) {
                 push( @certs_to_add, "/local/$file/ssl/httpd-chain.crt" );
             }
-
-            my $self_signed = 0;
-            my $issuer;
-            my $subject;
-            open( my $in, "-|" ) || exec(
-                "openssl", "x509",
-                "-in" => "/local/$file/ssl/httpd.crt",
-                "-issuer", "-subject", "-noout"
-            );
-            while ( defined( my $line = <$in> ) ) {
-                if ( $line =~ /issuer=\s*(.*?)\s*$/o ) {
-                    $issuer = $1;
-                    print "Found cert issuer: $1\n";
-                    if ( $ca_map{$1} ) {
-                        push( @certs_to_add, $ca_map{$1} );
-                    }
-                }
-                if ( $line =~ /subject=\s*(.*?)\s*$/o ) {
-                    $subject = $1;
-                    print "Found cert subject: $1\n";
-                }
-            }
-            close($in);
-
-            if ( $issuer && $issuer eq $subject ) {
-                print "Certificate is self signed.\n";
-            }
-            elsif ( scalar(@certs_to_add) == 0 ) {
-                print "No issuer CA matched, looking up Authority Information Access.\n";
-                open( my $in, "-|" ) || exec(
-                    "openssl", "x509",
-                    "-in" => "/local/$file/ssl/httpd.crt",
-                    "-text"
-                );
-                while ( defined( my $line = <$in> ) ) {
-                    if ( $line =~ /CA Issuers - URI:(http.*?)\s+/ ) {
-                        $aia_issuer = $1;
-                        print "Found AIA Issuer: $1\n";
-                    }
-                }
-                close($in);
-            }
         }
 
-        if ( scalar(@certs_to_add) == 0 && $aia_issuer ) {
-            print "Retrieving AIA issuer certificate...\n";
-            my $tmp_cert = "/tmp/tmpcert-$$-" . time;
-            if ( -e "/usr/bin/wget" ) {
-                system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
-            }
-            elsif ( -e "/usr/bin/curl" ) {
-                system( "/usr/bin/curl", "-q", "--output", $tmp_cert, $aia_issuer );
-            }
-            else {
-                die "Cannot retrieve upstream AIA issuer cert.";
-            }
-            system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", "/local/$file/ssl/issuer.crt" );
-            push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
+        my @certs = &extract_ca_hierarchy("/local/$file/ssl/httpd.crt");
+        if ( !@certs ) {
+            die "Cannot extract CA hierarchy.";
         }
-
-        # Insure it's not empty, otherwise error on startup
-        if ( scalar(@certs_to_add) == 0 && -e "/local/$file/ssl/httpd.crt" ) {
-            push( @certs_to_add, "/local/$file/ssl/httpd.crt" );
+        open( my $out, ">/local/$file/ssl/issuer.crt" );
+        foreach my $cert (@certs) {
+            print $out $cert, "\n";
         }
+        push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
 
         my $merge_count = 0;
         open( my $out, ">/local/$file/ssl/chain.crt" );
@@ -403,4 +330,52 @@ sub setup_scripts {
     print OUT "fi\n";
     close(OUT);
     &mysystem("chmod 700 $dir/reload");
+}
+
+sub extract_ca_hierarchy {
+    my $cert = shift @_;
+    my @out  = ();
+
+    my $tmp_cert  = "/tmp/cert-extract-$$-" . time . ".crt";
+    my $tmp_cert2 = "/tmp/cert-extract2-$$-" . time . ".crt";
+
+    my $depth = 5;
+    while ( $cert && $depth-- ) {
+    	my $aia_issuer;
+        open( my $in, "-|" ) || exec(
+            "openssl", "x509",
+            "-in" => $cert,
+            "-text"
+        );
+        while ( defined( my $line = <$in> ) ) {
+            if ( $line =~ /CA Issuers - URI:(http.*?)\s+/ ) {
+                $aia_issuer = $1;
+                print "Found AIA Issuer: $1\n";
+            }
+        }
+        close($in);
+        if ($aia_issuer) {
+            if ( -e "/usr/bin/wget" ) {
+                system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
+            }
+            elsif ( -e "/usr/bin/curl" ) {
+                system( "/usr/bin/curl", "-q", "--output", $tmp_cert, $aia_issuer );
+            }
+            else {
+                die "Cannot retrieve upstream cert.";
+            }
+            system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", $tmp_cert2 );
+            open( my $in, "<$tmp_cert2" );
+            my $raw = join( "", <$in> );
+            close($in);
+            push( @out, $raw );
+            $cert = $tmp_cert2;
+        }
+        else {
+            $cert = undef;
+        }
+    }
+
+    print "Returning ", scalar(@out), " intermediate certs.\n";
+    return @out;
 }
