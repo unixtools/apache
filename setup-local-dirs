@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 $| = 1;
 
+use Digest::SHA qw(sha1_hex);
+
 # Try a uname based approach first
 # Simplistic but sufficient for now
 my $osdir = "";
@@ -143,7 +145,7 @@ while ( $file = readdir(DIR) ) {
         foreach my $cert (@certs) {
             print $out $cert, "\n";
         }
-		close($out);
+        close($out);
         push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
 
         my $merge_count = 0;
@@ -340,9 +342,14 @@ sub extract_ca_hierarchy {
     my $tmp_cert  = "/tmp/cert-extract-$$-" . time . ".crt";
     my $tmp_cert2 = "/tmp/cert-extract2-$$-" . time . ".crt";
 
+    my $cache = "/local/apache/ca-cache";
+    if ( !-d $cache ) {
+        mkdir( $cache, 0700 );
+    }
+
     my $depth = 5;
     while ( $cert && $depth-- ) {
-    	my $aia_issuer;
+        my $aia_issuer;
         open( my $in, "-|" ) || exec(
             "openssl", "x509",
             "-in" => $cert,
@@ -356,21 +363,30 @@ sub extract_ca_hierarchy {
         }
         close($in);
         if ($aia_issuer) {
-            if ( -e "/usr/bin/wget" ) {
-                system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
-            }
-            elsif ( -e "/usr/bin/curl" ) {
-                system( "/usr/bin/curl", "-q", "--output", $tmp_cert, $aia_issuer );
+            my $hash      = sha1_hex($aia_issuer);
+            my $cachefile = "$cache/$hash.crt";
+
+            my $raw;
+            if ( -e $cachefile && -s $cachefile ) {
+                print "Loading CA file from cache: $cachefile\n";
             }
             else {
-                die "Cannot retrieve upstream cert.";
+                if ( -e "/usr/bin/wget" ) {
+                    system( "/usr/bin/wget", "-q", "-O$tmp_cert", $aia_issuer );
+                }
+                elsif ( -e "/usr/bin/curl" ) {
+                    system( "/usr/bin/curl", "-q", "--output", $tmp_cert, $aia_issuer );
+                }
+                else {
+                    die "Cannot retrieve upstream cert.";
+                }
+                system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", $cachefile );
             }
-            system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", $tmp_cert2 );
-            open( my $in, "<$tmp_cert2" );
-            my $raw = join( "", <$in> );
-            close($in);
+			open( my $in, "<$cachefile" );
+			$raw = join( "", <$in> );
+			close($in);
+			$cert = $cachefile;
             push( @out, $raw );
-            $cert = $tmp_cert2;
         }
         else {
             $cert = undef;
