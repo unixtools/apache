@@ -143,12 +143,13 @@ while ( $file = readdir(DIR) ) {
         foreach my $cert (@certs) {
             print $out $cert, "\n";
         }
+		close($out);
         push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
 
         my $merge_count = 0;
         open( my $out, ">/local/$file/ssl/chain.crt" );
         foreach my $file (@certs_to_add) {
-            print "  Merging $file...\n";
+            print "Merging $file into chain.crt...\n";
             open( my $in, "<$file" );
             while ( defined( my $line = <$in> ) ) {
                 print $out $line;
