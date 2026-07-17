@@ -380,12 +380,18 @@ sub extract_ca_hierarchy {
                 else {
                     die "Cannot retrieve upstream cert.";
                 }
-                system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", $cachefile );
+                if ( $aia_issuer =~ /\.p7c/ ) {
+                    system( "openssl", "pkcs7", "-in", $tmp_cert, "-inform", "DER", "-print_certs", "-out",
+                        $cachefile );
+                }
+                else {
+                    system( "openssl", "x509", "-in", $tmp_cert, "-outform", "PEM", "-out", $cachefile );
+                }
             }
-			open( my $in, "<$cachefile" );
-			$raw = join( "", <$in> );
-			close($in);
-			$cert = $cachefile;
+            open( my $in, "<$cachefile" );
+            $raw = join( "", <$in> );
+            close($in);
+            $cert = $cachefile;
             push( @out, $raw );
         }
         else {
