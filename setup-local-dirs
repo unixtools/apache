@@ -139,30 +139,33 @@ while ( $file = readdir(DIR) ) {
 
         my @certs = &extract_ca_hierarchy("/local/$file/ssl/httpd.crt");
         if ( !@certs ) {
-            die "Cannot extract CA hierarchy.";
+            print "Cannot extract CA hierarchy, treating as self-signed.";
+            system( "cp", "/local/$file/ssl/httpd.crt", "/local/$file/ssl/chain.crt" );
         }
-        open( my $out, ">/local/$file/ssl/issuer.crt" );
-        foreach my $cert (@certs) {
-            print $out $cert, "\n";
-        }
-        close($out);
-        push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
+        else {
+            open( my $out, ">/local/$file/ssl/issuer.crt" );
+            foreach my $cert (@certs) {
+                print $out $cert, "\n";
+            }
+            close($out);
+            push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
 
-        my $merge_count = 0;
-        open( my $out, ">/local/$file/ssl/chain.crt" );
-        foreach my $file (@certs_to_add) {
-            print "Merging $file into chain.crt...\n";
-            open( my $in, "<$file" );
-            while ( defined( my $line = <$in> ) ) {
-                print $out $line;
+            my $merge_count = 0;
+            open( my $out, ">/local/$file/ssl/chain.crt" );
+            foreach my $file (@certs_to_add) {
+                print "Merging $file into chain.crt...\n";
+                open( my $in, "<$file" );
+                while ( defined( my $line = <$in> ) ) {
+                    print $out $line;
+                }
+                close($in);
+                print $out "\n";
+                if ( $file =~ m|apache/ca-certs|io || $file =~ /issuer.crt/ ) {
+                    $merge_count++;
+                }
             }
-            close($in);
-            print $out "\n";
-            if ( $file =~ m|apache/ca-certs|io || $file =~ /issuer.crt/ ) {
-                $merge_count++;
-            }
+            close($out);
         }
-        close($out);
 
         if ( $merge_count < 1 ) {
             print "  ###\n";
