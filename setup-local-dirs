@@ -137,6 +137,7 @@ while ( $file = readdir(DIR) ) {
             }
         }
 
+        my $merge_count = 0;
         my @certs = &extract_ca_hierarchy("/local/$file/ssl/httpd.crt");
         if ( !@certs ) {
             print "Cannot extract CA hierarchy, treating as self-signed.";
@@ -150,7 +151,6 @@ while ( $file = readdir(DIR) ) {
             close($out);
             push( @certs_to_add, "/local/$file/ssl/issuer.crt" );
 
-            my $merge_count = 0;
             open( my $out, ">/local/$file/ssl/chain.crt" );
             foreach my $file (@certs_to_add) {
                 print "Merging $file into chain.crt...\n";
@@ -160,7 +160,7 @@ while ( $file = readdir(DIR) ) {
                 }
                 close($in);
                 print $out "\n";
-                if ( $file =~ m|apache/ca-certs|io || $file =~ /issuer.crt/ ) {
+                if ( $file =~ /issuer.crt/ ) {
                     $merge_count++;
                 }
             }
@@ -169,8 +169,7 @@ while ( $file = readdir(DIR) ) {
 
         if ( $merge_count < 1 ) {
             print "  ###\n";
-            print
-                "  ### WARNING: Only one chain file found to merge, check for missing chain in /local/apache/ca-certs\n";
+            print "  ### WARNING: Unable to expand CA intermediate certificates.\n";
             print "  ###\n";
         }
 
